@@ -17,7 +17,7 @@ public class ConnectDB {
         try{
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
             System.out.println("Ket noi thanh cong"); // Connection successful
-            return DriverManager.getConnection(url, "sa", "sa123456");
+            return DriverManager.getConnection(url, "sa", "123");
         } catch (SQLException e) {
             System.out.println("Ket noi that bai"); // Connection failed
             e.printStackTrace();
