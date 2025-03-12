@@ -276,6 +276,30 @@ public class DAO {
         return null;
     }
 
+    public List<Variant> getVariantsByProductId(int productId) {
+        try {
+            List<Variant> variants = new ArrayList<>();
+            Connection conn = ConnectDB.connect();
+
+            PreparedStatement ps = conn.prepareStatement(
+                    "SELECT v.id, v.id_product, c.id, c.color, s.id, s.size, v.stock, v.price " +
+                    "FROM Variants v JOIN Color c ON v.id_color = c.id JOIN Size s ON v.id_size = s.id " +
+                    "WHERE v.id_product = ?"
+            );
+            ps.setInt(1, productId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Color color = new Color(rs.getInt(3), rs.getString(4));
+                Size size = new Size(rs.getInt(5), rs.getString(6));
+                variants.add(new Variant(rs.getInt(1), rs.getInt(2), color, size, rs.getDouble(8), rs.getInt(7)));
+            }
+            return variants;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public static void main(String[] args) {
         DAO dao = new DAO();
         Product p = dao.getProductsByPID("26");

@@ -16,6 +16,7 @@ import java.util.List;
 import model.Color;
 import model.Product;
 import model.Size;
+import model.Variant;
 
 /**
  *
@@ -41,9 +42,13 @@ public class DetailProductControl extends HttpServlet {
         Product p = dao.getProductsByPID(id);
         List<Color> colors = dao.getAllColors();
         List<Size> sizes = dao.getAllSizes();
+        
+        // Lấy tất cả biến thể của sản phẩm
+        List<Variant> variants = dao.getVariantsByProductId(p.getId());
 
         request.setAttribute("colors", colors);
         request.setAttribute("sizes", sizes);
+        request.setAttribute("variants", variants);
 
         // Kiểm tra nếu đã chọn màu thì lấy danh sách biến thể tương ứng
       

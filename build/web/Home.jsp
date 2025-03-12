@@ -27,9 +27,11 @@
 <%@ include file="/layout/header.jsp" %>
 
 
-        <section class="jumbotron text-center">
+        <section class="hero-section text-center">
             <div class="container">
-               
+                <h1>Welcome to Our Fashion Store</h1>
+                <p>Discover the latest trends and styles</p>
+                <a href="#products" class="hero-button">Shop Now</a>
             </div>
         </section>
         <div class="container">
@@ -72,8 +74,11 @@
                     </div>
                    
                 </div>
-                <div class="col-md-9">
+                <div class="col-md-9" id="products">
                     <div class="row">
+                        <div class="col-12 mb-4">
+                            <h2 class="text-left">Our Products</h2>
+                        </div>
                         <%
                             List<Product> list = (List<Product>) request.getAttribute("listP");
                             if (list != null) {
@@ -88,13 +93,8 @@
                                     </h4>
                                     <p class="card-text show_txt" style="color: black;"><%= p.getTitle() %></p>
 
-                                    <div class="row">
-                                        <div class="col">
-                                            <p class="btn btn-danger btn-block"></p>
-                                        </div>
-                                        <div class="col">
-                                            <a href="#" class="btn btn-success btn-block">Add to cart</a>
-                                        </div>
+                                    <div class="text-center">
+                                        <a href="#" class="btn btn-success">Add to cart</a>
                                     </div>
                                 </div>
                             </div>

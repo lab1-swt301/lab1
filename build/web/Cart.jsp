@@ -4,111 +4,195 @@
     Author     : trinh
 --%>
 
+<%@page import="model.CartItem"%>
+<%@page import="java.util.Map"%>
+<%@page import="java.util.HashMap"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>JSP Page</title>
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-
+        <title>Shopping Cart</title>
+        <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+        <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+        <link href="assets/css/style.css" rel="stylesheet" type="text/css"/>
+        <style>
+            .cart-item {
+                margin-bottom: 20px;
+                padding-bottom: 20px;
+                border-bottom: 1px solid #eee;
+            }
+            .cart-item-image {
+                width: 100px;
+                height: 100px;
+                object-fit: cover;
+            }
+            .cart-summary {
+                background-color: #f9f9f9;
+                padding: 20px;
+                border-radius: 5px;
+            }
+            .cart-actions {
+                margin-top: 30px;
+            }
+            .variant-details {
+                font-size: 0.9rem;
+                color: #666;
+            }
+            .empty-cart {
+                text-align: center;
+                padding: 50px 0;
+            }
+            .empty-cart i {
+                font-size: 5rem;
+                color: #ddd;
+                margin-bottom: 20px;
+            }
+        </style>
     </head>
-
     <body>
-        <%@ include file="/layout/header.jsp" %>
-
-            <div class="shopping-cart">
-                <div class="px-4 px-lg-0">
-
-                    <div class="pb-5">
-                        <div class="container">
-                            <div class="row">
-                                <div class="col-lg-12 p-5 bg-white rounded shadow-sm mb-5">
-
-                                    <!-- Shopping cart table -->
-                                    <div class="table-responsive">
-                                        <table class="table">
-                                            <thead>
-                                                <tr>
-                                                    <th scope="col" class="border-0 bg-light">
-                                                        <div class="p-2 px-3 text-uppercase">Sản Phẩm</div>
-                                                    </th>
-                                                    <th scope="col" class="border-0 bg-light">
-                                                        <div class="py-2 text-uppercase">Đơn Giá</div>
-                                                    </th>
-                                                    <th scope="col" class="border-0 bg-light">
-                                                        <div class="py-2 text-uppercase">Số Lượng</div>
-                                                    </th>
-                                                    <th scope="col" class="border-0 bg-light">
-                                                        <div class="py-2 text-uppercase">Xóa</div>
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                            <%--<c:forEach items="${list}" var="o">--%>
-                                                <tr>
-                                                    <th scope="row">
-                                                        <div class="p-2">
-                                                            <img src="img" alt="" width="70" class="img-fluid rounded shadow-sm">
-                                                            <div class="ml-3 d-inline-block align-middle">
-                                                                <h5 class="mb-0"> <a href="#" class="text-dark d-inline-block">name</a></h5><span class="text-muted font-weight-normal font-italic"></span>
-                                                            </div>
-                                                        </div>
-                                                    </th>
-                                                    <td class="align-middle"><strong>price</strong></td>
-                                                    <td class="align-middle">
-                                                        <a href="#"><button class="btnSub">-</button></a> 
-                                                        <strong>amount</strong>
-                                                        <a href="#"><button class="btnAdd">+</button></a>
-                                                    </td>
-                                                    <td class="align-middle"><a href="#" class="text-dark">
-                                                            <button type="button" class="btn btn-danger">Delete</button>
-                                                        </a>
-                                                    </td>
-                                                </tr> 
-                                            </c:forEach>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <!-- End -->
+        <%@include file="layout/header.jsp" %>
+        <div class="container mt-4 mb-5">
+            <div class="row">
+                <div class="col">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="home">Home</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Shopping Cart</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+            
+            <% 
+                // Lấy thông báo nếu có
+                String message = (String) request.getAttribute("message");
+                String error = (String) request.getAttribute("error");
+                
+                if (message != null) {
+            %>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <%= message %>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <% } %>
+            
+            <% if (error != null) { %>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <%= error %>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <% } %>
+            
+            <h2 class="mb-4">Your Shopping Cart</h2>
+            
+            <% 
+                // Lấy giỏ hàng từ session
+                Map<Integer, CartItem> cart = (Map<Integer, CartItem>) session.getAttribute("cart");
+                
+                if (cart == null || cart.isEmpty()) {
+            %>
+            <div class="empty-cart">
+                <i class="fa fa-shopping-cart"></i>
+                <h3>Your cart is empty</h3>
+                <p>Looks like you haven't added any items to your cart yet.</p>
+                <a href="home" class="btn btn-primary mt-3">Continue Shopping</a>
+            </div>
+            <% } else { %>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <% 
+                        double total = 0;
+                        for (Map.Entry<Integer, CartItem> entry : cart.entrySet()) {
+                            CartItem item = entry.getValue();
+                            total += item.getTotal();
+                    %>
+                    <div class="cart-item">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <img src="<%= item.getProduct().getImage() %>" alt="<%= item.getProduct().getName() %>" class="cart-item-image">
                             </div>
-                        </div>
-
-                        <div class="row py-5 p-4 bg-white rounded shadow-sm">
-                            <div class="col-lg-6">
-                                <div class="bg-light rounded-pill px-4 py-3 text-uppercase font-weight-bold">Voucher</div>
-                                <div class="p-4">
-                                    <div class="input-group mb-4 border rounded-pill p-2">
-                                        <input type="text" placeholder="Nhập Voucher" aria-describedby="button-addon3" class="form-control border-0">
-                                        <div class="input-group-append border-0">
-                                            <button id="button-addon3" type="button" class="btn btn-dark px-4 rounded-pill"><i class="fa fa-gift mr-2"></i>Sử dụng</button>
-                                        </div>
+                            <div class="col-md-6">
+                                <h5><%= item.getProduct().getName() %></h5>
+                                <div class="variant-details">
+                                    <p>Size: <%= item.getVariant().getSize().getValue() %>, Color: <%= item.getVariant().getColor().getName() %></p>
+                                    <p>Price: $<%= String.format("%.2f", item.getVariant().getPrice()) %></p>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <form action="cart" method="post">
+                                    <input type="hidden" name="action" value="update">
+                                    <input type="hidden" name="variantId" value="<%= item.getVariant().getId() %>">
+                                    <div class="form-group">
+                                        <select name="quantity" class="form-control form-control-sm" onchange="this.form.submit()">
+                                            <% for (int i = 1; i <= Math.min(5, item.getVariant().getStock()); i++) { %>
+                                            <option value="<%= i %>" <%= (i == item.getQuantity()) ? "selected" : "" %>><%= i %></option>
+                                            <% } %>
+                                        </select>
                                     </div>
-                                </div>
+                                </form>
                             </div>
-                            <div class="col-lg-6">
-                                <div class="bg-light rounded-pill px-4 py-3 text-uppercase font-weight-bold">Thành tiền</div>
-                                <div class="p-4">
-                                    <ul class="list-unstyled mb-4">
-                                        <li class="d-flex justify-content-between py-3 border-bottom"><strong class="text-muted">Tổng tiền hàng</strong><strong>100 $</strong></li>
-                                        <li class="d-flex justify-content-between py-3 border-bottom"><strong class="text-muted">Phí vận chuyển</strong><strong>Free ship</strong></li>
-                                        <li class="d-flex justify-content-between py-3 border-bottom"><strong class="text-muted">VAT</strong><strong>10 $</strong></li>
-                                        <li class="d-flex justify-content-between py-3 border-bottom"><strong class="text-muted">Tổng thanh toán</strong>
-                                            <h5 class="font-weight-bold">110 $</h5>
-                                        </li>
-                                    </ul><a href="buy" class="btn btn-dark rounded-pill py-2 btn-block">Mua hàng</a>
-                                </div>
+                            <div class="col-md-2 text-right">
+                                <p class="mb-1">$<%= String.format("%.2f", item.getTotal()) %></p>
+                                <a href="cart?action=remove&variantId=<%= item.getVariant().getId() %>" class="text-danger">
+                                    <i class="fa fa-trash"></i> Remove
+                                </a>
                             </div>
                         </div>
-
+                    </div>
+                    <% } %>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="cart-summary">
+                        <h4 class="mb-3">Order Summary</h4>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <span>$<%= String.format("%.2f", total) %></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Shipping:</span>
+                            <span>$0.00</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-4">
+                            <strong>Total:</strong>
+                            <strong>$<%= String.format("%.2f", total) %></strong>
+                        </div>
+                        
+                        <form action="cart" method="post">
+                            <input type="hidden" name="action" value="checkout">
+                            <button type="submit" class="btn btn-success btn-block">
+                                <i class="fa fa-credit-card"></i> Proceed to Checkout
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div class="cart-actions">
+                        <a href="home" class="btn btn-outline-secondary btn-block">
+                            <i class="fa fa-arrow-left"></i> Continue Shopping
+                        </a>
                     </div>
                 </div>
             </div>
+            <% } %>
         </div>
-        <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+        
+        <script>
+            // Auto-hide alerts after 5 seconds
+            $(document).ready(function() {
+                setTimeout(function() {
+                    $(".alert").alert('close');
+                }, 5000);
+            });
+        </script>
     </body>
-
 </html>
 

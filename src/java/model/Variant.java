@@ -14,6 +14,8 @@ public class Variant {
     private double price;
     private Color color;
     private Size size;
+    private Product product;
+    
 
     public Variant(int id, int productId, Color color, Size size, double price, int stock) {
         this.id = id;
