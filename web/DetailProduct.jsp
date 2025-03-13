@@ -245,13 +245,23 @@
                                                     </div>
                                                     <div class="quantity-selector mb-3">
                                                         <label for="quantity" class="mr-2">Quantity:</label>
-                                                        <select id="quantity" name="quantity" class="form-control form-control-sm" style="width: 70px;">
-                                                            <option value="1">1</option>
-                                                            <option value="2">2</option>
-                                                            <option value="3">3</option>
-                                                            <option value="4">4</option>
-                                                            <option value="5">5</option>
-                                                        </select>
+                                                        <div class="input-group" style="width: 150px;">
+                                                            <div class="input-group-prepend">
+                                                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="decreaseQuantity()">
+                                                                    <i class="fa fa-minus"></i>
+                                                                </button>
+                                                            </div>
+                                                            <input type="number" id="quantity" name="quantity" class="form-control form-control-sm text-center" 
+                                                                   value="1" min="1" max="5" onchange="updateTotalPrice()">
+                                                            <div class="input-group-append">
+                                                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="increaseQuantity()">
+                                                                    <i class="fa fa-plus"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="total-price mb-3">
+                                                        <strong>Total:</strong> <span id="totalPrice">$0.00</span>
                                                     </div>
                                                     <button type="submit" class="btn btn-primary btn-block" id="addToCartBtn">
                                                         <i class="fa fa-shopping-cart"></i> Add to Cart
@@ -308,6 +318,8 @@
                     price: <%= v.getPrice() %>,
                     stock: <%= v.getStock() %>
                 };
+                console.log("variantData", variantData);
+                
             <% 
                 }
             } 
@@ -408,25 +420,23 @@
             
             function updateVariantInfo() {
                 if (selectedSize && selectedColor) {
-                    const variantKey = `${selectedSize}-${selectedColor}`;
+                    
+                    const variantKey = selectedSize + '-' + selectedColor;
                     const variant = variantData[variantKey];
                     
                     if (variant && variant.stock > 0) {
                         // Cập nhật thông tin biến thể
-                        document.getElementById('variantPrice').textContent = `$${variant.price.toFixed(2)}`;
+                        document.getElementById('variantPrice').textContent = variant.price.toFixed(2);
                         document.getElementById('variantStock').textContent = variant.stock;
                         document.getElementById('selectedVariantId').value = variant.id;
                         
-                        // Giới hạn số lượng có thể chọn dựa trên tồn kho
-                        const quantitySelect = document.getElementById('quantity');
-                        quantitySelect.innerHTML = '';
+                        // Cập nhật giới hạn số lượng dựa trên tồn kho
+                        const quantityInput = document.getElementById('quantity');
+                        quantityInput.value = 1;
+                        quantityInput.max = Math.min(5, variant.stock);
                         
-                        for (let i = 1; i <= Math.min(5, variant.stock); i++) {
-                            const option = document.createElement('option');
-                            option.value = i;
-                            option.textContent = i;
-                            quantitySelect.appendChild(option);
-                        }
+                        // Cập nhật tổng giá
+                        updateTotalPrice();
                         
                         // Hiển thị thông tin biến thể
                         document.getElementById('variantInfo').style.display = 'block';
@@ -434,6 +444,38 @@
                     } else {
                         // Nếu biến thể không có sẵn hoặc hết hàng
                         document.getElementById('variantInfo').style.display = 'none';
+                    }
+                }
+            }
+            
+            function decreaseQuantity() {
+                const quantityInput = document.getElementById('quantity');
+                const currentValue = parseInt(quantityInput.value);
+                if (currentValue > 1) {
+                    quantityInput.value = currentValue - 1;
+                    updateTotalPrice();
+                }
+            }
+            
+            function increaseQuantity() {
+                const quantityInput = document.getElementById('quantity');
+                const currentValue = parseInt(quantityInput.value);
+                const maxValue = parseInt(quantityInput.max);
+                if (currentValue < maxValue) {
+                    quantityInput.value = currentValue + 1;
+                    updateTotalPrice();
+                }
+            }
+            
+            function updateTotalPrice() {
+                if (selectedSize && selectedColor) {
+                    const variantKey = selectedSize + '-' + selectedColor;
+                    const variant = variantData[variantKey];
+                    
+                    if (variant) {
+                        const quantity = parseInt(document.getElementById('quantity').value);
+                        const totalPrice = (variant.price * quantity).toFixed(2);
+                        document.getElementById('totalPrice').textContent = totalPrice;
                     }
                 }
             }

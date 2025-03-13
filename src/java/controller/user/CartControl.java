@@ -64,7 +64,17 @@ public class CartControl extends HttpServlet {
                         if (cart.containsKey(variantId)) {
                             // Cập nhật số lượng nếu đã có trong giỏ hàng
                             CartItem existingItem = cart.get(variantId);
-                            existingItem.setQuantity(existingItem.getQuantity() + quantity);
+                            int newQuantity = existingItem.getQuantity() + quantity;
+                            
+                            // Kiểm tra nếu số lượng mới vượt quá tồn kho
+                            if (newQuantity > selectedVariant.getStock()) {
+                                newQuantity = selectedVariant.getStock();
+                                request.setAttribute("message", "Số lượng đã được điều chỉnh theo tồn kho!");
+                            } else {
+                                request.setAttribute("message", "Đã cập nhật số lượng sản phẩm trong giỏ hàng!");
+                            }
+                            
+                            existingItem.setQuantity(newQuantity);
                         } else {
                             // Thêm mới vào giỏ hàng
                             CartItem newItem = new CartItem(
@@ -73,13 +83,11 @@ public class CartControl extends HttpServlet {
                                     quantity
                             );
                             cart.put(variantId, newItem);
+                            request.setAttribute("message", "Đã thêm sản phẩm vào giỏ hàng!");
                         }
                         
                         // Cập nhật giỏ hàng trong session
                         session.setAttribute("cart", cart);
-                        
-                        // Thông báo thành công
-                        request.setAttribute("message", "Đã thêm sản phẩm vào giỏ hàng!");
                     } else {
                         // Thông báo lỗi nếu không đủ hàng
                         request.setAttribute("error", "Số lượng sản phẩm trong kho không đủ!");
@@ -97,6 +105,16 @@ public class CartControl extends HttpServlet {
                 
                 if (cart.containsKey(updateVariantId)) {
                     CartItem item = cart.get(updateVariantId);
+                    Variant variant = item.getVariant();
+                    
+                    // Kiểm tra số lượng tồn kho
+                    if (updateQuantity > variant.getStock()) {
+                        updateQuantity = variant.getStock();
+                        request.setAttribute("message", "Số lượng đã được điều chỉnh theo tồn kho!");
+                    } else {
+                        request.setAttribute("message", "Đã cập nhật số lượng sản phẩm!");
+                    }
+                    
                     item.setQuantity(updateQuantity);
                 }
                 
@@ -115,11 +133,21 @@ public class CartControl extends HttpServlet {
                 // Cập nhật giỏ hàng trong session
                 session.setAttribute("cart", cart);
                 
+                // Thông báo thành công
+                request.setAttribute("message", "Đã xóa sản phẩm khỏi giỏ hàng!");
+                
                 // Chuyển hướng đến trang giỏ hàng
                 response.sendRedirect("cart");
                 return;
                 
             case "checkout":
+                // Kiểm tra giỏ hàng trước khi thanh toán
+                if (cart.isEmpty()) {
+                    request.setAttribute("error", "Giỏ hàng của bạn đang trống!");
+                    request.getRequestDispatcher("Cart.jsp").forward(request, response);
+                    return;
+                }
+                
                 // Xử lý thanh toán (sẽ thêm sau)
                 // Xóa giỏ hàng sau khi thanh toán
                 session.removeAttribute("cart");

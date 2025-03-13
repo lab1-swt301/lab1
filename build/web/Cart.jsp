@@ -50,6 +50,13 @@
                 color: #ddd;
                 margin-bottom: 20px;
             }
+            .quantity-input {
+                width: 120px;
+            }
+            .item-total {
+                font-weight: bold;
+                font-size: 1.1rem;
+            }
         </style>
     </head>
     <body>
@@ -114,33 +121,48 @@
                             CartItem item = entry.getValue();
                             total += item.getTotal();
                     %>
-                    <div class="cart-item">
+                    <div class="cart-item" id="item-<%= item.getVariant().getId() %>">
                         <div class="row">
                             <div class="col-md-2">
                                 <img src="<%= item.getProduct().getImage() %>" alt="<%= item.getProduct().getName() %>" class="cart-item-image">
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-5">
                                 <h5><%= item.getProduct().getName() %></h5>
                                 <div class="variant-details">
                                     <p>Size: <%= item.getVariant().getSize().getValue() %>, Color: <%= item.getVariant().getColor().getName() %></p>
                                     <p>Price: $<%= String.format("%.2f", item.getVariant().getPrice()) %></p>
                                 </div>
                             </div>
-                            <div class="col-md-2">
-                                <form action="cart" method="post">
+                            <div class="col-md-3">
+                                <form id="form-<%= item.getVariant().getId() %>" action="cart" method="post">
                                     <input type="hidden" name="action" value="update">
                                     <input type="hidden" name="variantId" value="<%= item.getVariant().getId() %>">
                                     <div class="form-group">
-                                        <select name="quantity" class="form-control form-control-sm" onchange="this.form.submit()">
-                                            <% for (int i = 1; i <= Math.min(5, item.getVariant().getStock()); i++) { %>
-                                            <option value="<%= i %>" <%= (i == item.getQuantity()) ? "selected" : "" %>><%= i %></option>
-                                            <% } %>
-                                        </select>
+                                        <div class="input-group quantity-input">
+                                            <div class="input-group-prepend">
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                                        onclick="decreaseQuantity(<%= item.getVariant().getId() %>, <%= item.getVariant().getPrice() %>)">
+                                                    <i class="fa fa-minus"></i>
+                                                </button>
+                                            </div>
+                                            <input type="number" name="quantity" id="quantity-<%= item.getVariant().getId() %>" 
+                                                   class="form-control form-control-sm text-center" 
+                                                   style="padding: 0;"
+                                                   value="<%= item.getQuantity() %>" min="1" max="<%= Math.min(5, item.getVariant().getStock()) %>"
+                                                   onchange="updateItemTotal(<%= item.getVariant().getId() %>, <%= item.getVariant().getPrice() %>)">
+                                            <div class="input-group-append">
+                                                <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                                        onclick="increaseQuantity(<%= item.getVariant().getId() %>, <%= item.getVariant().getPrice() %>, <%= Math.min(5, item.getVariant().getStock()) %>)">
+                                                    <i class="fa fa-plus"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-outline-primary mt-2">Update</button>
                                     </div>
                                 </form>
                             </div>
                             <div class="col-md-2 text-right">
-                                <p class="mb-1">$<%= String.format("%.2f", item.getTotal()) %></p>
+                                <p class="item-total" id="total-<%= item.getVariant().getId() %>">$<%= String.format("%.2f", item.getTotal()) %></p>
                                 <a href="cart?action=remove&variantId=<%= item.getVariant().getId() %>" class="text-danger">
                                     <i class="fa fa-trash"></i> Remove
                                 </a>
@@ -155,7 +177,7 @@
                         <h4 class="mb-3">Order Summary</h4>
                         <div class="d-flex justify-content-between mb-2">
                             <span>Subtotal:</span>
-                            <span>$<%= String.format("%.2f", total) %></span>
+                            <span id="cart-subtotal">$<%= String.format("%.2f", total) %></span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span>Shipping:</span>
@@ -164,7 +186,7 @@
                         <hr>
                         <div class="d-flex justify-content-between mb-4">
                             <strong>Total:</strong>
-                            <strong>$<%= String.format("%.2f", total) %></strong>
+                            <strong id="cart-total">$<%= String.format("%.2f", total) %></strong>
                         </div>
                         
                         <form action="cart" method="post">
@@ -192,6 +214,54 @@
                     $(".alert").alert('close');
                 }, 5000);
             });
+            
+            // Hàm giảm số lượng
+            function decreaseQuantity(variantId, price) {
+                const quantityInput = document.getElementById("quantity-" + variantId);
+                const currentValue = parseInt(quantityInput.value);
+                if (currentValue > 1) {
+                    quantityInput.value = currentValue - 1;
+                    updateItemTotal(variantId, price);
+                }
+            }
+            
+            // Hàm tăng số lượng
+            function increaseQuantity(variantId, price, maxStock) {
+                const quantityInput = document.getElementById("quantity-" + variantId);
+                const currentValue = parseInt(quantityInput.value);
+                if (currentValue < maxStock) {
+                    quantityInput.value = currentValue + 1;
+                    updateItemTotal(variantId, price);
+                }
+            }
+            
+            // Hàm cập nhật tổng giá của một mục
+            function updateItemTotal(variantId, price) {
+                const quantityInput = document.getElementById("quantity-" + variantId);
+                const quantity = parseInt(quantityInput.value);
+                const totalElement = document.getElementById(`total-${variantId}`);
+                const itemTotal = (price * quantity).toFixed(2);
+                totalElement.textContent = `$${itemTotal}`;
+                
+                // Cập nhật tổng giá giỏ hàng
+                updateCartTotal();
+            }
+            
+            // Hàm cập nhật tổng giá giỏ hàng
+            function updateCartTotal() {
+                let subtotal = 0;
+                const totalElements = document.querySelectorAll('[id^="total-"]');
+                
+                totalElements.forEach(element => {
+                    // Lấy giá trị số từ chuỗi (bỏ ký tự $)
+                    const value = parseFloat(element.textContent.replace('$', ''));
+                    subtotal += value;
+                });
+                
+                // Cập nhật subtotal và total
+                document.getElementById('cart-subtotal').textContent = `$${subtotal.toFixed(2)}`;
+                document.getElementById('cart-total').textContent = `$${subtotal.toFixed(2)}`;
+            }
         </script>
     </body>
 </html>
