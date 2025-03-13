@@ -4,12 +4,14 @@
  */
 package model;
 
+import java.io.Serializable;
+
 /**
  *
  * @author LENOVO
  */
-public class Variant {
-
+public class Variant implements Serializable {
+    private static final long serialVersionUID = 1L;
     private int id, productId, stock;
     private double price;
     private Color color;

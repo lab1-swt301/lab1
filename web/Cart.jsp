@@ -100,9 +100,9 @@
             <h2 class="mb-4">Your Shopping Cart</h2>
             
             <% 
-                // Lấy giỏ hàng từ session
-                Map<Integer, CartItem> cart = (Map<Integer, CartItem>) session.getAttribute("cart");
-                
+                // Lấy giỏ hàng từ request
+                Map<Integer, CartItem> cart = (Map<Integer, CartItem>) request.getAttribute("cart");
+                    System.out.println("Cart in request: " + request.getAttribute("cart"));
                 if (cart == null || cart.isEmpty()) {
             %>
             <div class="empty-cart">

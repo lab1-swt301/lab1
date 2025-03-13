@@ -1,9 +1,12 @@
 package model;
 
+import java.io.Serializable;
+
 /**
  * Lớp đại diện cho một mục trong giỏ hàng
  */
-public class CartItem {
+public class CartItem implements Serializable {
+    private static final long serialVersionUID = 1L;
     private Product product;
     private Variant variant;
     private int quantity;

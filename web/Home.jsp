@@ -94,7 +94,7 @@
                                     <p class="card-text show_txt" style="color: black;"><%= p.getTitle() %></p>
 
                                     <div class="text-center">
-                                        <a href="#" class="btn btn-success">Add to cart</a>
+                                        <a href="detail?pid=<%= p.getId() %>" class="btn btn-success">View Product</a>
                                     </div>
                                 </div>
                             </div>

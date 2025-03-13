@@ -7,11 +7,16 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Cookie;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import model.CartItem;
 import model.Product;
 import model.Variant;
@@ -19,16 +24,15 @@ import model.Variant;
 @WebServlet(name = "CartControl", urlPatterns = {"/cart"})
 public class CartControl extends HttpServlet {
 
+    private static final String CART_COOKIE_NAME = "user_cart";
+    private static final int COOKIE_MAX_AGE = 30 * 24 * 60 * 60; // 30 days in seconds
+
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         
-        HttpSession session = request.getSession();
-        Map<Integer, CartItem> cart = (Map<Integer, CartItem>) session.getAttribute("cart");
-        if (cart == null) {
-            cart = new HashMap<>();
-            session.setAttribute("cart", cart);
-        }
+        // Get cart from cookies instead of session
+        Map<Integer, CartItem> cart = getCartFromCookies(request);
         
         String action = request.getParameter("action");
         if (action == null) {
@@ -86,14 +90,14 @@ public class CartControl extends HttpServlet {
                             request.setAttribute("message", "Đã thêm sản phẩm vào giỏ hàng!");
                         }
                         
-                        // Cập nhật giỏ hàng trong session
-                        session.setAttribute("cart", cart);
+                        // Lưu giỏ hàng vào cookie
+                        saveCartToCookie(response, cart);
                     } else {
                         // Thông báo lỗi nếu không đủ hàng
                         request.setAttribute("error", "Số lượng sản phẩm trong kho không đủ!");
                     }
                 }
-                
+                request.setAttribute("cart", cart);
                 // Chuyển hướng đến trang giỏ hàng
                 response.sendRedirect("cart");
                 return;
@@ -118,8 +122,8 @@ public class CartControl extends HttpServlet {
                     item.setQuantity(updateQuantity);
                 }
                 
-                // Cập nhật giỏ hàng trong session
-                session.setAttribute("cart", cart);
+                // Lưu giỏ hàng vào cookie
+                saveCartToCookie(response, cart);
                 
                 // Chuyển hướng đến trang giỏ hàng
                 response.sendRedirect("cart");
@@ -130,8 +134,8 @@ public class CartControl extends HttpServlet {
                 int removeVariantId = Integer.parseInt(request.getParameter("variantId"));
                 cart.remove(removeVariantId);
                 
-                // Cập nhật giỏ hàng trong session
-                session.setAttribute("cart", cart);
+                // Lưu giỏ hàng vào cookie
+                saveCartToCookie(response, cart);
                 
                 // Thông báo thành công
                 request.setAttribute("message", "Đã xóa sản phẩm khỏi giỏ hàng!");
@@ -150,7 +154,7 @@ public class CartControl extends HttpServlet {
                 
                 // Xử lý thanh toán (sẽ thêm sau)
                 // Xóa giỏ hàng sau khi thanh toán
-                session.removeAttribute("cart");
+                clearCartCookie(response);
                 
                 // Chuyển hướng đến trang xác nhận đơn hàng
                 request.setAttribute("message", "Đặt hàng thành công!");
@@ -159,10 +163,72 @@ public class CartControl extends HttpServlet {
                 
             case "view":
             default:
+                // Lưu giỏ hàng vào request để hiển thị
+                request.setAttribute("cart", cart);
                 // Hiển thị trang giỏ hàng
                 request.getRequestDispatcher("Cart.jsp").forward(request, response);
                 break;
         }
+    }
+
+    // Phương thức lấy giỏ hàng từ cookie
+    private Map<Integer, CartItem> getCartFromCookies(HttpServletRequest request) {
+        Map<Integer, CartItem> cart = new HashMap<>();
+        Cookie[] cookies = request.getCookies();
+        
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (CART_COOKIE_NAME.equals(cookie.getName())) {
+                    try {
+                        String cookieValue = cookie.getValue();
+                        byte[] data = Base64.getDecoder().decode(cookieValue);
+                        
+                        ByteArrayInputStream bis = new ByteArrayInputStream(data);
+                        ObjectInputStream ois = new ObjectInputStream(bis);
+                        cart = (Map<Integer, CartItem>) ois.readObject();
+                        ois.close();
+                        bis.close();
+                    } catch (IOException | ClassNotFoundException e) {
+                        // Nếu có lỗi, trả về giỏ hàng trống
+                        System.out.println("Error deserializing cart: " + e.getMessage());
+                        cart = new HashMap<>();
+                    }
+                    break;
+                }
+            }
+        }
+        
+        return cart;
+    }
+
+    // Phương thức lưu giỏ hàng vào cookie
+    private void saveCartToCookie(HttpServletResponse response, Map<Integer, CartItem> cart) {
+        try {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(bos);
+            oos.writeObject(cart);
+            oos.flush();
+            
+            String cookieValue = Base64.getEncoder().encodeToString(bos.toByteArray());
+            
+            Cookie cookie = new Cookie(CART_COOKIE_NAME, cookieValue);
+            cookie.setMaxAge(COOKIE_MAX_AGE);
+            cookie.setPath("/");
+            response.addCookie(cookie);
+            
+            oos.close();
+            bos.close();
+        } catch (Exception e) {
+            System.out.println("Error serializing cart: " + e.getMessage());
+        }
+    }
+
+    // Phương thức xóa cookie giỏ hàng
+    private void clearCartCookie(HttpServletResponse response) {
+        Cookie cookie = new Cookie(CART_COOKIE_NAME, "");
+        cookie.setMaxAge(0); // 0 means delete immediately
+        cookie.setPath("/");
+        response.addCookie(cookie);
     }
 
     @Override
@@ -181,4 +247,4 @@ public class CartControl extends HttpServlet {
     public String getServletInfo() {
         return "Cart Controller";
     }
-} 
+}
