@@ -12,7 +12,7 @@ import java.sql.*;
 
 public class ConnectDB {
      public static Connection connect() throws ClassNotFoundException  {
-        String url = "jdbc:sqlserver://localhost:1433;databaseName=ass;trustServerCertificate=true;";
+        String url = "jdbc:sqlserver://localhost:1433;databaseName=AsmPrj301;trustServerCertificate=true;";
 //        Connection conn=null;
         try{
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");

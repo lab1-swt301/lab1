@@ -1,4 +1,5 @@
 <%@page import="model.Account" %>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 
 <nav class="navbar navbar-expand-md navbar-dark bg-dark">
   <div class="container">
@@ -17,11 +18,15 @@
 
     <div class="collapse navbar-collapse" id="navbarsExampleDefault">
       <ul class="navbar-nav ml-auto">
-        <% Account acc = (Account) session.getAttribute("acc"); if (acc != null)
-        { if (acc.getIsAdmin() == 1) { %>
-        <li class="nav-item">
-          <a class="nav-link" href="manager">Manager Product</a>
-        </li>
+        <% Account acc = (Account) session.getAttribute("acc"); 
+        if (acc != null) { 
+          if (acc.getIsAdmin() == 1) { %>
+            <li class="nav-item">
+              <a class="nav-link" href="manager">Manager Product</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="sale">Thống kê</a>
+            </li>
         <% } %>
         <li class="nav-item">
           <a class="nav-link" href="#"><%= acc.getUser() %></a>
@@ -35,6 +40,7 @@
         </li>
         <% } %>
       </ul>
+      
       <form action="search" method="post" class="form-inline">
         <div class="input-group input-group-sm">
           <input

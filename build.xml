@@ -7,8 +7,8 @@
 <!-- the Compile on Save feature is turned off for the project. -->
 <!-- You can turn off the Compile on Save (or Deploy on Save) setting -->
 <!-- in the project's Project Properties dialog box.-->
-<project name="Ws1" default="default" basedir=".">
-    <description>Builds, tests, and runs the project Ws1.</description>
+<project name="AssignmentPRJ301" default="default" basedir=".">
+    <description>Builds, tests, and runs the project AssignmentPRJ301.</description>
     <import file="nbproject/build-impl.xml"/>
     <!--
 

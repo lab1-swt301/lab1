@@ -16,6 +16,7 @@ import model.Category;
 import model.Color;
 import model.Size;
 import model.Variant;
+import model.ProductStats;
 
 /**
  *
@@ -65,6 +66,26 @@ public class DAO {
 
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, cid);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                list.add(new Product(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5)));
+            }
+            return list;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public List<Product> getProductsByName(String txtSearch) {
+        List<Product> list = new ArrayList<Product>();
+        try {
+            Connection conn = ConnectDB.connect();
+            String sql = "select * from Products\n"
+                    + "where [Product_name] LIKE ?";
+
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, "%" + txtSearch + "%");
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 list.add(new Product(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5)));
@@ -187,7 +208,7 @@ public class DAO {
             ps.setString(1, user);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                return new Account(rs.getInt(1),
+                return new Account(rs.getInt(""),
                         rs.getString(2),
                         rs.getString(3),
                         rs.getInt(4));
@@ -258,9 +279,9 @@ public class DAO {
             Connection conn = ConnectDB.connect();
 
             PreparedStatement ps = conn.prepareStatement(
-                    "SELECT v.id, v.id_product, c.id, c.color, s.id, s.size, v.stock, v.price \"\n" +
-"                    + \"FROM Variants v JOIN Color c ON v.id_color = c.id JOIN Size s ON v.id_size = s.id \"\n" +
-"                    + \"WHERE v.color_id = ? AND v.stock > 0"
+                    "SELECT v.id, v.id_product, c.id, c.color, s.id, s.size, v.stock, v.price \"\n"
+                    + "                    + \"FROM Variants v JOIN Color c ON v.id_color = c.id JOIN Size s ON v.id_size = s.id \"\n"
+                    + "                    + \"WHERE v.color_id = ? AND v.stock > 0"
             );
             ps.setInt(1, colorId);
             ResultSet rs = ps.executeQuery();
@@ -282,9 +303,9 @@ public class DAO {
             Connection conn = ConnectDB.connect();
 
             PreparedStatement ps = conn.prepareStatement(
-                    "SELECT v.id, v.id_product, c.id, c.color, s.id, s.size, v.stock, v.price " +
-                    "FROM Variants v JOIN Color c ON v.id_color = c.id JOIN Size s ON v.id_size = s.id " +
-                    "WHERE v.id_product = ?"
+                    "SELECT v.id, v.id_product, c.id, c.color, s.id, s.size, v.stock, v.price "
+                    + "FROM Variants v JOIN Color c ON v.id_color = c.id JOIN Size s ON v.id_size = s.id "
+                    + "WHERE v.id_product = ?"
             );
             ps.setInt(1, productId);
             ResultSet rs = ps.executeQuery();
@@ -299,6 +320,101 @@ public class DAO {
         }
         return null;
     }
+    
+ public List<ProductStats> getProductSalesStats() {
+        List<ProductStats> list = new ArrayList<>();
+        
+        String query = """
+                WITH ProductStock AS (
+                    SELECT
+                        v.id_product,
+                        SUM(ISNULL(v.stock, 0)) AS totalStockRemaining 
+                    FROM
+                        Variants v
+                    GROUP BY
+                        v.id_product
+                ),
+                SalesAggregation AS (
+                    SELECT
+                        v.id_product,
+                        SUM(od.quantity) AS totalQuantitySold,
+                        SUM(od.total_price) AS totalRevenue
+                    FROM
+                        Variants v
+                    INNER JOIN
+                        OrderDetail od ON v.id = od.variant_id
+                    GROUP BY
+                        v.id_product
+                )
+                SELECT
+                    p.Product_id,
+                    p.Product_name,
+                    p.Product_img,
+                    p.Product_tittle,        
+                    p.Product_description,  
+                    ISNULL(sa.totalQuantitySold, 0) AS totalQuantitySold,
+                    ISNULL(sa.totalRevenue, 0) AS totalRevenue,
+                    ISNULL(ps.totalStockRemaining, 0) AS quantityRemaining 
+                FROM
+                    Products p
+                LEFT JOIN
+                    SalesAggregation sa ON p.Product_id = sa.id_product
+                LEFT JOIN
+                    ProductStock ps ON p.Product_id = ps.id_product
+                ORDER BY
+                    p.Product_id;
+                """; 
+
+        try (Connection conn = ConnectDB.connect();
+             PreparedStatement pt = (conn != null) ? conn.prepareStatement(query) : null;
+             ResultSet rs = (pt != null) ? pt.executeQuery() : null)
+        {
+            if (rs == null) {
+                 if (conn == null) {
+                    System.err.println("Lỗi: Không thể kết nối tới cơ sở dữ liệu.");
+                    throw new RuntimeException("Database connection failed.");
+                 } else {
+                    System.err.println("Lỗi: Không thể tạo PreparedStatement.");
+                    throw new RuntimeException("Failed to prepare SQL statement.");
+                 }
+            }
+
+            System.out.println("Executing query to get product stats..."); 
+
+            while (rs.next()) {
+                ProductStats ps = new ProductStats();
+                ps.setId(rs.getInt("Product_id"));
+                ps.setName(rs.getString("Product_name"));
+                ps.setImage(rs.getString("Product_img"));
+                // Sửa tên cột khi lấy dữ liệu từ ResultSet
+                ps.setTittle(rs.getString("Product_tittle"));
+                ps.setDescription(rs.getString("Product_description"));
+                ps.setTotalQuantitySold(rs.getInt("totalQuantitySold"));
+                ps.setTotalRevenue(rs.getDouble("totalRevenue"));
+                // Alias 'quantityRemaining' được giữ lại như trong code Java gốc của bạn,
+                // nhưng giá trị này đến từ totalStockRemaining của CTE ProductStock
+                ps.setTotalRemainingStock(rs.getInt("quantityRemaining"));
+                list.add(ps);
+
+            }
+            System.out.println("Total products stats fetched: " + list.size()); // Cập nhật log
+
+        } catch (SQLException e) {
+            // Ghi log lỗi SQL cụ thể hơn
+            System.err.println("SQL Error in getProductSalesStats: " + e.getMessage());
+            e.printStackTrace();
+            // Ném lại ngoại lệ để lớp gọi có thể xử lý nếu cần
+            throw new RuntimeException("Error executing SQL query in getProductSalesStats: " + e.getMessage(), e);
+        } catch (Exception e) {
+            // Bắt các lỗi khác (ví dụ: lỗi kết nối không phải SQLException)
+             System.err.println("General Error in getProductSalesStats: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Unexpected error in getProductSalesStats: " + e.getMessage(), e);
+        }
+        return list;
+    }
+
+
 
     public static void main(String[] args) {
         DAO dao = new DAO();

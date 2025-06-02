@@ -32,6 +32,14 @@
         <servlet-name>VariantControl</servlet-name>
         <servlet-class>controller.user.VariantControl</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>SearchControl</servlet-name>
+        <servlet-class>controller.user.SearchControl</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>SaleStates</servlet-name>
+        <servlet-class>controller.admin.SaleStatesControl</servlet-class>
+    </servlet>
     <servlet-mapping>
         <servlet-name>HomeControl</servlet-name>
         <url-pattern>/home</url-pattern>
@@ -67,5 +75,13 @@
     <servlet-mapping>
         <servlet-name>VariantControl</servlet-name>
         <url-pattern>/variant</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>SearchControl</servlet-name>
+        <url-pattern>/search</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>SaleStates</servlet-name>
+        <url-pattern>/sale</url-pattern>
     </servlet-mapping>
 </web-app>
