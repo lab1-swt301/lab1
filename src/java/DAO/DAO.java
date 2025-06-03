@@ -24,22 +24,43 @@ import model.ProductStats;
  */
 public class DAO {
 
-    public List<Product> getAllProducts() {
+//    public List<Product> getAllProducts() {
+//        List<Product> list = new ArrayList<Product>();
+//        try {
+//            Connection conn = ConnectDB.connect();
+//            String sql = "SELECT * FROM dbo.Products";
+//            PreparedStatement stmt = conn.prepareStatement(sql);
+//            ResultSet rs = stmt.executeQuery();
+//            while (rs.next()) {
+//                list.add(new Product(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5)));
+//            }
+//            return list;
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return null;
+//        }
+//    }
+    
+    // AFTER: Code sau khi sửa (sử dụng try-with-resources để đóng tài nguyên đúng cách)
+    public List<Product> getAllProduct() {
         List<Product> list = new ArrayList<Product>();
-        try {
-            Connection conn = ConnectDB.connect();
-            String sql = "SELECT * FROM dbo.Products";
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            ResultSet rs = stmt.executeQuery();
+        
+        // Sử dụng try-with-resources để tự động đóng Connection, PreparedStatement và ResultSet
+        try (Connection conn = ConnectDB.connect();
+             PreparedStatement stmt = conn.prepareStatement("SELECT * FROM dbo.Products");
+             ResultSet rs = stmt.executeQuery()) {
+
             while (rs.next()) {
                 list.add(new Product(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5)));
             }
             return list;
+
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
     }
+
 
     public List<Category> getAllCategory() {
         List<Category> list = new ArrayList<Category>();
