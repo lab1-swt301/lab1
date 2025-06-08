@@ -3,7 +3,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package DAO;
-
+import java.util.Properties;
 /**
  *
  * @author LENOVO
@@ -11,19 +11,22 @@ package DAO;
 import java.sql.*;
 
 public class ConnectDB {
-     public static Connection connect() throws ClassNotFoundException  {
-        String url = "jdbc:sqlserver://localhost:1433;databaseName=AsmPrj301;trustServerCertificate=true;";
-//        Connection conn=null;
-        try{
-            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-            System.out.println("Ket noi thanh cong"); // Connection successful
-            return DriverManager.getConnection(url, "sa", "123");
-        } catch (SQLException e) {
-            System.out.println("Ket noi that bai"); // Connection failed
-            e.printStackTrace();
-            return null;
-        }
+
+     
+     public static Connection connect() throws SQLException {
+    Properties props = new Properties();
+    try (FileInputStream in = new FileInputStream("src/application.properties")) {
+        props.load(in);
+    } catch (Exception e) {
+        throw new RuntimeException("Failed to load database properties", e);
     }
+    String url = props.getProperty("db.url");
+    String username = props.getProperty("db.username");
+    String password = props.getProperty("db.password");
+    return DriverManager.getConnection(url, username, password);
+}
+     
+
      public static void main(String[] args) throws ClassNotFoundException {
         Connection cnn= ConnectDB.connect();
          System.out.println(cnn);
