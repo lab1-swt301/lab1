@@ -42,7 +42,7 @@ public class SaleStatesControl extends HttpServlet {
             out.println("<body>");
             out.println("<h1>Servlet SaleStates at " + request.getContextPath () + "</h1>");
             out.println("</body>");
-            out.println("</html>");
+            out.println("</html>")
         }
     } 
 
