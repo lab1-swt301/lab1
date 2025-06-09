@@ -4,6 +4,7 @@
  */
 package DAO;
 import java.util.Properties;
+import java.io.FileInputStream;
 /**
  *
  * @author LENOVO
@@ -18,7 +19,7 @@ public class ConnectDB {
     try (FileInputStream in = new FileInputStream("src/application.properties")) {
         props.load(in);
     } catch (Exception e) {
-        throw new RuntimeException("Failed to load database properties", e);
+        throw new SQLException("Failed to load database properties", e);
     }
     String url = props.getProperty("db.url");
     String username = props.getProperty("db.username");
@@ -27,8 +28,12 @@ public class ConnectDB {
 }
      
 
-     public static void main(String[] args) throws ClassNotFoundException {
-        Connection cnn= ConnectDB.connect();
-         System.out.println(cnn);
+     public static void main(String[] args) {
+         try {
+             ConnectDB.connect();
+             
+         } catch (SQLException e) {
+             e.printStackTrace();
+         }
     }
 }
