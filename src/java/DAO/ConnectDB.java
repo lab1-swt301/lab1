@@ -4,11 +4,12 @@
  */
 package DAO;
 import java.util.Properties;
-import java.io.FileInputStream;
+
 /**
  *
  * @author LENOVO
  */
+import java.io.FileInputStream;
 import java.sql.*;
 
 public class ConnectDB {
@@ -31,9 +32,9 @@ public class ConnectDB {
      public static void main(String[] args) {
          try {
              ConnectDB.connect();
-             
          } catch (SQLException e) {
              e.printStackTrace();
          }
+       
     }
 }

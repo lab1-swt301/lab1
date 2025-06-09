@@ -25,7 +25,7 @@ public class DAO {
     public List<Product> getAllProducts() {
         List<Product> list = new ArrayList<>();
         try (Connection conn = ConnectDB.connect();
-             PreparedStatement stmt = conn.prepareStatement("SELECT Product_id, Product_name, Product_img, Product_tittle, Product_description FROM dbo.Products");
+             PreparedStatement stmt = conn.prepareStatement("SELECT * FROM dbo.Products");
              ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 list.add(new Product(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5)));
